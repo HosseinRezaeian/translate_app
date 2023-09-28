@@ -2,9 +2,15 @@ from googletrans import Translator, constants
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout,QLineEdit,QCheckBox
 from PyQt5.QtCore import Qt 
+
+from gtts import gTTS
+import pygame
+import io
+
 translator = Translator()
 # Create a subclass of QWidget for your application
 class TranslateApp(QWidget):
+    entered_text=''
     def __init__(self):
         super().__init__()
 
@@ -17,7 +23,9 @@ class TranslateApp(QWidget):
         self.result_label = QLabel()
 
         submit_button = QPushButton('translate')
+        listening_button=QPushButton('Listening')
         submit_button.clicked.connect(self.show_text)
+        listening_button.clicked.connect(self.speack_text)
         self.text_field.returnPressed.connect(submit_button.click)
 
 
@@ -26,7 +34,9 @@ class TranslateApp(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.text_field)
         layout.addWidget(submit_button)
+        layout.addWidget(listening_button)
         layout.addWidget(self.fortranslate)
+        
         layout.addWidget(self.result_label)
 
 
@@ -58,12 +68,31 @@ class TranslateApp(QWidget):
         self.show()
         
     def show_text(self):
-        entered_text = self.text_field.text()
+        self.entered_text = self.text_field.text()
         self.text_field.clear()
-        if entered_text !="":
-            self.fortranslate.setText(entered_text)
-            translation = translator.translate(entered_text, dest="fa")
+        if self.entered_text !="":
+            self.fortranslate.setText(self.entered_text)
+            translation = translator.translate(self.entered_text, dest="fa")
             self.result_label.setText(translation.text)
+            
+
+    def speack_text(self):
+        if self.entered_text !="":
+            tts = gTTS(self.entered_text)
+            audio_bytes = io.BytesIO()
+            tts.write_to_fp(audio_bytes)
+            audio_bytes.seek(0)
+
+            # Initialize pygame mixer
+            pygame.mixer.init()
+
+            # Load and play the audio from the bytes-like object
+            pygame.mixer.music.load(audio_bytes)
+            pygame.mixer.music.play()
+
+            # Wait for the audio to finish playing
+            while pygame.mixer.music.get_busy():
+                pygame.time.Clock().tick(10)
 
 
 def main():
